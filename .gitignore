@@ -8,3 +8,18 @@ build/
 *.dll
 *.so
 *.dylib
+
+# Go
+vendor/
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# uploads
+backend/uploads/media/*
+!backend/uploads/media/.gitkeep
