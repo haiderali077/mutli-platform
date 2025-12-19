@@ -5,14 +5,12 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/haiderali077/mutli-platform/internal/handlers"
 )
 
 func main() {
 	r := chi.NewRouter()
-
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("ok"))
-	})
+	handlers.Handler(r)
 
 	fmt.Println("Server starting on :8000")
 	http.ListenAndServe("localhost:8000", r)
