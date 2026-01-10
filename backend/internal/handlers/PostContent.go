@@ -43,3 +43,38 @@ func PostContent(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 }
+
+func BuildUploadStructs(params api.TotalFields) ([]tools.UploadContent, error) {
+	var uploads []tools.UploadContent
+
+	for _, p := range params.Platforms {
+		switch p {
+		case "youtube":
+			uploads = append(uploads, tools.YouTubeUploader{
+				AccessToken:   "123",
+				PlatformName:  "youtube",
+				Title:         params.Title,
+				Description:   params.Description,
+				Tags:          params.Tags,
+				CategoryID:    params.CategoryID,
+				PrivacyStatus: params.PrivacyStatus,
+				MediaFile:     params.MediaFile,
+			})
+
+		case "reddit":
+			uploads = append(uploads, tools.RedditUploader{
+				AccessToken:  "123",
+				PlatformName: "reddit",
+				Subreddit:    params.Subreddit,
+				PostType:     params.PostType,
+				Title:        params.Title,
+				Text:         params.Text,
+				URL:          params.URL,
+				Resubmit:     params.Resubmit,
+				NSFW:         params.NSFW,
+			})
+		}
+	}
+
+	return uploads, nil
+}
