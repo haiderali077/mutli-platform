@@ -51,27 +51,23 @@ func BuildUploadStructs(params api.TotalFields) ([]tools.UploadContent, error) {
 		switch p {
 		case "youtube":
 			uploads = append(uploads, tools.YouTubeUploader{
-				AccessToken:   "123",
-				PlatformName:  "youtube",
-				Title:         params.Title,
-				Description:   params.Description,
-				Tags:          params.Tags,
-				CategoryID:    params.CategoryID,
-				PrivacyStatus: params.PrivacyStatus,
-				MediaFile:     params.MediaFile,
+				AccessToken: "123", PlatformName: "youtube",
+				Title: params.Title, Description: params.Description,
+				Tags: params.Tags, CategoryID: params.CategoryID,
+				PrivacyStatus: params.PrivacyStatus, MediaFile: params.MediaFile,
 			})
-
+		case "instagram":
+			uploads = append(uploads, tools.InstagramUploader{
+				AccessToken: "123", PlatformName: "instagram",
+				ImageURL: params.ImageURL, Caption: params.Caption,
+				LocationID: params.LocationID, UserTags: params.UserTags,
+			})
 		case "reddit":
 			uploads = append(uploads, tools.RedditUploader{
-				AccessToken:  "123",
-				PlatformName: "reddit",
-				Subreddit:    params.Subreddit,
-				PostType:     params.PostType,
-				Title:        params.Title,
-				Text:         params.Text,
-				URL:          params.URL,
-				Resubmit:     params.Resubmit,
-				NSFW:         params.NSFW,
+				AccessToken: "123", PlatformName: "reddit",
+				Subreddit: params.Subreddit, PostType: params.PostType,
+				Title: params.Title, Text: params.Text,
+				URL: params.URL, Resubmit: params.Resubmit, NSFW: params.NSFW,
 			})
 		}
 	}
