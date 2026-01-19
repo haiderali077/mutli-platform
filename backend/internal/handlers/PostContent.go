@@ -14,19 +14,16 @@ var wg = sync.WaitGroup{}
 
 func PostContent(w http.ResponseWriter, r *http.Request) {
 	var params = api.TotalFields{}
-
 	err := json.NewDecoder(r.Body).Decode(&params)
 	if err != nil {
 		api.HandleRequestError(w, err)
 		return
 	}
-
 	uploads, err := BuildUploadStructs(params)
 	if err != nil {
 		api.HandleInternalError(w)
 		return
 	}
-
 	for _, v := range uploads {
 		wg.Add(1)
 		go tools.SendAPI(v, &wg)
@@ -34,11 +31,9 @@ func PostContent(w http.ResponseWriter, r *http.Request) {
 	wg.Wait()
 
 	response := map[string]interface{}{
-		"success":   true,
-		"message":   "Content uploaded successfully",
+		"success": true, "message": "Content uploaded successfully",
 		"platforms": params.Platforms,
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
@@ -46,7 +41,6 @@ func PostContent(w http.ResponseWriter, r *http.Request) {
 
 func BuildUploadStructs(params api.TotalFields) ([]tools.UploadContent, error) {
 	var uploads []tools.UploadContent
-
 	for _, p := range params.Platforms {
 		switch p {
 		case "youtube":
@@ -62,6 +56,13 @@ func BuildUploadStructs(params api.TotalFields) ([]tools.UploadContent, error) {
 				ImageURL: params.ImageURL, Caption: params.Caption,
 				LocationID: params.LocationID, UserTags: params.UserTags,
 			})
+		case "pinterest":
+			uploads = append(uploads, tools.PinterestUploader{
+				AccessToken: "123", PlatformName: "pinterest",
+				BoardID: params.BoardID, Title: params.Title,
+				Description: params.Description, Link: params.Link,
+				SourceType: params.SourceType, ImageURL: params.ImageURL,
+			})
 		case "reddit":
 			uploads = append(uploads, tools.RedditUploader{
 				AccessToken: "123", PlatformName: "reddit",
@@ -71,6 +72,5 @@ func BuildUploadStructs(params api.TotalFields) ([]tools.UploadContent, error) {
 			})
 		}
 	}
-
 	return uploads, nil
 }
