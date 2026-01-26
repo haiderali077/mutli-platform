@@ -15,25 +15,12 @@ var wg = sync.WaitGroup{}
 func PostContent(w http.ResponseWriter, r *http.Request) {
 	var params = api.TotalFields{}
 	err := json.NewDecoder(r.Body).Decode(&params)
-	if err != nil {
-		api.HandleRequestError(w, err)
-		return
-	}
+	if err != nil { api.HandleRequestError(w, err); return }
 	uploads, err := BuildUploadStructs(params)
-	if err != nil {
-		api.HandleInternalError(w)
-		return
-	}
-	for _, v := range uploads {
-		wg.Add(1)
-		go tools.SendAPI(v, &wg)
-	}
+	if err != nil { api.HandleInternalError(w); return }
+	for _, v := range uploads { wg.Add(1); go tools.SendAPI(v, &wg) }
 	wg.Wait()
-
-	response := map[string]interface{}{
-		"success": true, "message": "Content uploaded successfully",
-		"platforms": params.Platforms,
-	}
+	response := map[string]interface{}{"success": true, "message": "Content uploaded successfully", "platforms": params.Platforms}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
@@ -45,30 +32,33 @@ func BuildUploadStructs(params api.TotalFields) ([]tools.UploadContent, error) {
 		switch p {
 		case "youtube":
 			uploads = append(uploads, tools.YouTubeUploader{
-				AccessToken: "123", PlatformName: "youtube",
-				Title: params.Title, Description: params.Description,
-				Tags: params.Tags, CategoryID: params.CategoryID,
+				AccessToken: "123", PlatformName: "youtube", Title: params.Title,
+				Description: params.Description, Tags: params.Tags, CategoryID: params.CategoryID,
 				PrivacyStatus: params.PrivacyStatus, MediaFile: params.MediaFile,
 			})
 		case "instagram":
 			uploads = append(uploads, tools.InstagramUploader{
-				AccessToken: "123", PlatformName: "instagram",
-				ImageURL: params.ImageURL, Caption: params.Caption,
-				LocationID: params.LocationID, UserTags: params.UserTags,
+				AccessToken: "123", PlatformName: "instagram", ImageURL: params.ImageURL,
+				Caption: params.Caption, LocationID: params.LocationID, UserTags: params.UserTags,
 			})
 		case "pinterest":
 			uploads = append(uploads, tools.PinterestUploader{
-				AccessToken: "123", PlatformName: "pinterest",
-				BoardID: params.BoardID, Title: params.Title,
-				Description: params.Description, Link: params.Link,
+				AccessToken: "123", PlatformName: "pinterest", BoardID: params.BoardID,
+				Title: params.Title, Description: params.Description, Link: params.Link,
 				SourceType: params.SourceType, ImageURL: params.ImageURL,
 			})
 		case "reddit":
 			uploads = append(uploads, tools.RedditUploader{
-				AccessToken: "123", PlatformName: "reddit",
-				Subreddit: params.Subreddit, PostType: params.PostType,
-				Title: params.Title, Text: params.Text,
+				AccessToken: "123", PlatformName: "reddit", Subreddit: params.Subreddit,
+				PostType: params.PostType, Title: params.Title, Text: params.Text,
 				URL: params.URL, Resubmit: params.Resubmit, NSFW: params.NSFW,
+			})
+		case "linkedin":
+			uploads = append(uploads, tools.LinkedInUploader{
+				AccessToken: "123", PlatformName: "linkedin", Author: params.Author,
+				LifecycleState: params.LifecycleState, Text: params.TextLinkedIn,
+				MediaType: params.MediaType, MediaStatus: params.MediaStatus,
+				MediaPath: params.MediaPath, Visibility: params.Visibility,
 			})
 		}
 	}
