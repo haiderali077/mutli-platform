@@ -62,15 +62,21 @@ func (r RedditUploader) BuildAPI() map[string]interface{} {
 }
 
 func SendAPI(u UploadContent, wg *sync.WaitGroup) {
+	defer wg.Done()
 	body := u.BuildAPI()
 	platform := body["platform_name"]
 	switch platform {
 	case "youtube":
 		title := getString(body, "title"); description := getString(body, "description")
 		category := getString(body, "category_id"); privacy := getString(body, "privacy_status")
-		filename := getString(body, "media_file"); tags := getString(body, "tags")
+		filename := getString(body, "media_file")
+		tagsList := getStringArray(body, "tags")
+		tags := ""
+		for _, v := range tagsList { tags += v }
 		if filename != "" && filename != "blank" {
 			youtube.UploadYoutube(title, description, category, privacy, filename, tags)
+		} else {
+			fmt.Printf("Skipping YouTube upload - no valid filename (got: '%s')\n", filename)
 		}
 	case "instagram":
 		instagram.UploadInstagram(getString(body, "image_url"), getString(body, "caption"), getString(body, "user_tags"))
@@ -89,7 +95,6 @@ func SendAPI(u UploadContent, wg *sync.WaitGroup) {
 	case "linkedin":
 		linkedin.UploadLinkedIn()
 	}
-	wg.Done()
 }
 
 func getString(body map[string]interface{}, key string) string {
@@ -97,4 +102,10 @@ func getString(body map[string]interface{}, key string) string {
 		if str, ok := val.(string); ok { return str }
 	}
 	return ""
+}
+func getStringArray(body map[string]interface{}, key string) []string {
+	if val, ok := body[key]; ok && val != nil {
+		if arr, ok := val.([]string); ok { return arr }
+	}
+	return []string{}
 }
