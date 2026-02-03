@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { Platform } from "./types";
 
 const PLATFORM_FIELDS: Record<Platform, string[]> = {
@@ -11,4 +12,32 @@ const PLATFORM_FIELDS: Record<Platform, string[]> = {
 export function getRequiredFields(platforms: Platform[]): string[] {
   const fields = platforms.flatMap(p => PLATFORM_FIELDS[p] || []);
   return [...new Set(fields)];
+}
+
+const baseSchema = z.object({
+  title: z.string().optional(), description: z.string().optional(),
+  caption: z.string().optional(), tags: z.array(z.string()).optional(),
+  privacy_status: z.string().optional(), category_id: z.string().optional(),
+  image_url: z.string().optional(), user_tags: z.string().optional(),
+  board_id: z.string().optional(), source_type: z.string().optional(),
+  subreddit: z.string().optional(), post_type: z.string().optional(),
+  text: z.string().optional(), url: z.string().optional(),
+  resubmit: z.boolean().optional(), nsfw: z.boolean().optional(),
+  author: z.string().optional(), lifecycle_state: z.string().optional(),
+  text_linkedin: z.string().optional(), media_type: z.string().optional(),
+  visibility: z.string().optional(),
+});
+
+export function buildZodSchema(requiredFields: string[], selectedPlatforms: Platform[]) {
+  let schema = baseSchema;
+  if (selectedPlatforms.includes("youtube")) {
+    schema = schema.extend({
+      title: z.string().min(1, "Title is required"),
+      description: z.string().min(1, "Description is required"),
+    });
+  }
+  if (selectedPlatforms.includes("instagram")) {
+    schema = schema.extend({ caption: z.string().min(1, "Caption is required") });
+  }
+  return schema;
 }
