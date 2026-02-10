@@ -25,4 +25,7 @@ func Handler(r *chi.Mux) {
 	r.Route("/post", func(router chi.Router) {
 		router.Post("/content", PostContent)
 	})
+	r.Route("/upload", func(router chi.Router) {
+		router.Post("/file", UploadFile)
+	})
 }
