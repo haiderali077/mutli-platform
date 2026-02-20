@@ -18,9 +18,17 @@ func PostContent(w http.ResponseWriter, r *http.Request) {
 	if err != nil { api.HandleRequestError(w, err); return }
 	uploads, err := BuildUploadStructs(params)
 	if err != nil { api.HandleInternalError(w); return }
-	for _, v := range uploads { wg.Add(1); go tools.SendAPI(v, &wg) }
+	for _, v := range uploads {
+		wg.Add(1)
+		go tools.SendAPI(v, &wg)
+	}
 	wg.Wait()
-	response := map[string]interface{}{"success": true, "message": "Content uploaded successfully", "platforms": params.Platforms}
+	fmt.Println("All uploads completed concurrently")
+
+	response := map[string]interface{}{
+		"success": true, "message": "Content uploaded successfully",
+		"platforms": params.Platforms,
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
