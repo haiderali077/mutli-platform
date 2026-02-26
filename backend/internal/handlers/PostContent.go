@@ -14,16 +14,21 @@ var wg = sync.WaitGroup{}
 
 func PostContent(w http.ResponseWriter, r *http.Request) {
 	var params = api.TotalFields{}
-	err := json.NewDecoder(r.Body).Decode(&params)
-	if err != nil { api.HandleRequestError(w, err); return }
+	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+		api.HandleRequestError(w, err)
+		return
+	}
 	uploads, err := BuildUploadStructs(params)
-	if err != nil { api.HandleInternalError(w); return }
-	for _, v := range uploads {
+	if err != nil {
+		api.HandleInternalError(w)
+		return
+	}
+	for _, upload := range uploads {
 		wg.Add(1)
-		go tools.SendAPI(v, &wg)
+		go tools.SendAPI(upload, &wg)
 	}
 	wg.Wait()
-	fmt.Println("All uploads completed concurrently")
+	fmt.Println("All uploads completed")
 
 	response := map[string]interface{}{
 		"success": true, "message": "Content uploaded successfully",
