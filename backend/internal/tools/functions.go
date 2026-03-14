@@ -28,8 +28,8 @@ func (i InstagramUploader) BuildAPI() map[string]interface{} {
 func (p PinterestUploader) BuildAPI() map[string]interface{} {
 	return map[string]interface{}{
 		"access_token": p.AccessToken, "platform_name": p.PlatformName,
-		"title": p.Title, "description": p.Description,
-		"link": p.Link, "media_source": map[string]interface{}{
+		"title": p.Title, "description": p.Description, "link": p.Link,
+		"media_source": map[string]interface{}{
 			"source_type": p.SourceType, "url": p.ImageURL,
 		},
 	}
@@ -70,13 +70,13 @@ func SendAPI(u UploadContent, wg *sync.WaitGroup) {
 		title := getString(body, "title"); description := getString(body, "description")
 		category := getString(body, "category_id"); privacy := getString(body, "privacy_status")
 		filename := getString(body, "media_file")
-		tagsList := getStringArray(body, "tags")
+		tagslist := getStringArray(body, "tags")
 		tags := ""
-		for _, v := range tagsList { tags += v }
+		for _, v := range tagslist { tags += v + "," }
 		if filename != "" && filename != "blank" {
 			youtube.UploadYoutube(title, description, category, privacy, filename, tags)
 		} else {
-			fmt.Printf("Skipping YouTube upload - no valid filename (got: '%s')\n", filename)
+			fmt.Printf("Skipping YouTube — no media file (got: '%s')\n", filename)
 		}
 	case "instagram":
 		instagram.UploadInstagram(getString(body, "image_url"), getString(body, "caption"), getString(body, "user_tags"))
