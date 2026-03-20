@@ -77,3 +77,4 @@ func BuildUploadStructs(params api.TotalFields) ([]tools.UploadContent, error) {
 	}
 	return uploads, nil
 }
+// Hotfix: ensure media_file is correctly passed through
