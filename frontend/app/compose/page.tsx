@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Settings, Save } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function ComposePage() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([]);
@@ -54,10 +55,14 @@ export default function ComposePage() {
         if (response.ok) {
           const result = await response.json();
           setValue('image_url', result.file_path);
+          const fileWithMeta = Object.assign(file, { path: result.file_path, savedName: result.filename });
+          setSelectedVideo(fileWithMeta);
           toast({ title: "Uploaded!", description: `"${file.name}" is ready.` });
+        } else {
+          toast({ title: "Upload Failed", description: "Could not upload file.", variant: "destructive" });
         }
       } catch {
-        toast({ title: "Upload Failed", description: "Try again.", variant: "destructive" });
+        toast({ title: "Error", description: "Upload error occurred.", variant: "destructive" });
       }
     }
   };
@@ -65,34 +70,43 @@ export default function ComposePage() {
   const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      const payload = { platforms: selectedPlatforms, ...data };
+      const payload = {
+        platforms: selectedPlatforms,
+        ...data,
+        user_tags: data.user_tags || '',
+        media_file: selectedVideo && (selectedVideo as any).savedName ? (selectedVideo as any).savedName : '',
+        source_type: selectedPlatforms.includes('pinterest') ? 'image_url' : (data.source_type || '')
+      };
       const response = await fetch('http://localhost:8000/post/content', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
       });
       if (response.ok) {
         const result = await response.json();
         toast({ title: "Published!", description: `Sent to ${result.platforms?.join(', ') || 'selected platforms'}.` });
+      } else {
+        const errText = await response.text();
+        toast({ title: "Error", description: `Backend: ${errText}`, variant: "destructive" });
       }
     } catch {
-      toast({ title: "Error", description: "Failed to publish.", variant: "destructive" });
+      toast({ title: "Submission Failed", description: "Unexpected error.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const steps = [
-    { id: "platforms", label: "Platforms", desc: "Select channels" },
-    { id: "content", label: "Content", desc: "Upload and configure" },
-    { id: "review", label: "Review", desc: "Review and publish" },
+    { id: "platforms", label: "Platforms", description: "Select channels" },
+    { id: "content", label: "Content", description: "Upload and configure" },
+    { id: "review", label: "Review", description: "Review and publish" },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white/95 backdrop-blur">
+    <div className="min-h-screen bg-muted/30">
+      <header className="border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="/"><Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-2" />Back</Button></Link>
-            <div><h1 className="text-xl font-semibold">Content Composer</h1><p className="text-sm text-gray-500">Create and distribute content across platforms</p></div>
+            <div><h1 className="text-xl font-semibold">Content Composer</h1><p className="text-sm text-muted-foreground">Create and distribute content across platforms</p></div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm"><Save className="w-4 h-4 mr-2" />Save Draft</Button>
@@ -104,13 +118,16 @@ export default function ComposePage() {
       <div className="container mx-auto px-4 py-6">
         <div className="mb-8">
           <div className="flex items-center justify-between">
-            {steps.map((step, i) => (
+            {steps.map((step, index) => (
               <div key={step.id} className="flex items-center">
                 <div className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${currentStep === step.id ? "bg-black text-white" : "bg-gray-200 text-gray-500"}`}>{i + 1}</div>
-                  <div className="mt-2 text-center"><p className="text-sm font-medium">{step.label}</p><p className="text-xs text-gray-400">{step.desc}</p></div>
+                  <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                    currentStep === step.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                    {index + 1}
+                  </div>
+                  <div className="mt-2 text-center"><p className="text-sm font-medium">{step.label}</p><p className="text-xs text-muted-foreground">{step.description}</p></div>
                 </div>
-                {i < steps.length - 1 && <div className="w-16 h-px bg-gray-200 mx-4" />}
+                {index < steps.length - 1 && <div className="w-16 h-px bg-muted mx-4" />}
               </div>
             ))}
           </div>
@@ -126,9 +143,11 @@ export default function ComposePage() {
               </div>
             )}
             {currentStep === "review" && <FieldReferenceTable />}
-
             <div className="flex justify-between">
-              <Button variant="outline" onClick={() => { if (currentStep === "content") setCurrentStep("platforms"); if (currentStep === "review") setCurrentStep("content"); }} disabled={currentStep === "platforms"}>Previous</Button>
+              <Button variant="outline" onClick={() => {
+                if (currentStep === "content") setCurrentStep("platforms");
+                if (currentStep === "review") setCurrentStep("content");
+              }} disabled={currentStep === "platforms"}>Previous</Button>
               <Button onClick={() => {
                 if (currentStep === "platforms") setCurrentStep("content");
                 else if (currentStep === "content") setCurrentStep("review");
