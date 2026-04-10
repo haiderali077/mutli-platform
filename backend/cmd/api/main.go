@@ -15,7 +15,8 @@ func main() {
 	r := chi.NewRouter()
 	handlers.Handler(r)
 
-	fmt.Println("Starting API service on :8000")
+	fmt.Println("Starting API service on localhost:8000")
+
 	if err := http.ListenAndServe("localhost:8000", r); err != nil {
 		log.Error(err)
 	}
