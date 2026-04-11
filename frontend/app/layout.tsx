@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Multi-Platform Publisher',
-  description: 'Publish content across platforms',
+  description: 'Publish content across YouTube, Instagram, Pinterest, Reddit, and LinkedIn',
 }
 
 export default function RootLayout({
