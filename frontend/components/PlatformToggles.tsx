@@ -1,39 +1,121 @@
 "use client";
 
-import { Platform } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Platform, PLATFORM_NAMES } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { 
+  Youtube, 
+  MessageSquare, 
+  Instagram, 
+  Pin, 
+  Linkedin 
+} from "lucide-react";
 
-interface Props {
+interface PlatformTogglesProps {
   selectedPlatforms: Platform[];
   onPlatformToggle: (platform: Platform, checked: boolean) => void;
 }
 
-const platforms: { id: Platform; label: string; color: string }[] = [
-  { id: "youtube", label: "YouTube", color: "bg-red-500" },
-  { id: "instagram", label: "Instagram", color: "bg-pink-500" },
-  { id: "pinterest", label: "Pinterest", color: "bg-red-600" },
-  { id: "reddit", label: "Reddit", color: "bg-orange-500" },
-  { id: "linkedin", label: "LinkedIn", color: "bg-blue-600" },
-];
+// Map each platform to its corresponding icon from Lucide React
+const platformIcons = {
+  youtube: Youtube,
+  reddit: MessageSquare,
+  instagram: Instagram,
+  pinterest: Pin,
+  linkedin: Linkedin,
+};
 
-export function PlatformToggles({ selectedPlatforms, onPlatformToggle }: Props) {
+/**
+ * Component that lets users choose which social media platforms they want to post to
+ * Each platform is shown as a card with an icon, name, description, and toggle switch
+ */
+export function PlatformToggles({ selectedPlatforms, onPlatformToggle }: PlatformTogglesProps) {
+  // All the platforms we support
+  const allPlatforms: Platform[] = ["youtube", "reddit", "instagram", "pinterest", "linkedin"];
+  
+  // Filter platforms based on Pinterest selection
+  // If Pinterest is selected, only show platforms that support images
+  const platforms = selectedPlatforms.includes("pinterest") 
+    ? allPlatforms.filter(platform => platform !== "youtube") // Remove YouTube (video-only)
+    : allPlatforms;
+
   return (
     <Card>
-      <CardHeader><CardTitle>Select Platforms</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <span>Distribution Platforms</span>
+          {/* Show how many platforms the user has selected */}
+          <Badge variant="secondary">
+            {selectedPlatforms.length} selected
+          </Badge>
+        </CardTitle>
+      </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {platforms.map(({ id, label, color }) => {
-            const isChecked = selectedPlatforms.includes(id);
-            const isDisabled = id === "youtube" && selectedPlatforms.includes("pinterest");
+        {/* Display all platforms in a responsive grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {platforms.map((platform) => {
+            const Icon = platformIcons[platform];
+            const isSelected = selectedPlatforms.includes(platform);
+            
             return (
-              <label key={id} className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${isChecked ? "border-black bg-gray-50" : "hover:bg-gray-50"} ${isDisabled ? "opacity-40 cursor-not-allowed" : ""}`}>
-                <input type="checkbox" className="w-4 h-4" checked={isChecked} disabled={isDisabled} onChange={(e) => onPlatformToggle(id, e.target.checked)} />
-                <div className={`w-3 h-3 ${color} rounded-full`} />
-                <span className="font-medium">{label}</span>
-              </label>
+              <div
+                key={platform}
+                className={cn(
+                  "relative p-4 border rounded-lg transition-all duration-200 cursor-pointer hover:shadow-md",
+                  // Different styling for selected vs unselected platforms
+                  isSelected
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : "border-muted hover:border-muted-foreground/50"
+                )}
+                onClick={() => onPlatformToggle(platform, !isSelected)}
+              >
+                <div className="flex items-center space-x-3">
+                  {/* Platform icon with different colors based on selection state */}
+                  <div className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center",
+                    isSelected ? "bg-primary text-primary-foreground" : "bg-muted"
+                  )}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {/* Platform name */}
+                    <Label 
+                      htmlFor={platform} 
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      {PLATFORM_NAMES[platform]}
+                    </Label>
+                    {/* Short description of what this platform is for */}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {platform === "youtube" && "Video content & live streams"}
+                      {platform === "reddit" && "Community discussions & posts"}
+                      {platform === "instagram" && "Visual content & stories"}
+                      {platform === "pinterest" && "Visual discovery & inspiration"}
+                      {platform === "linkedin" && "Professional networking"}
+                    </p>
+                  </div>
+                  {/* Toggle switch - clicking it or the card will toggle the platform */}
+                  <Switch
+                    id={platform}
+                    checked={isSelected}
+                    onCheckedChange={(checked) => onPlatformToggle(platform, checked)}
+                    onClick={(e) => e.stopPropagation()} // Prevent double-triggering when clicking the switch
+                  />
+                </div>
+              </div>
             );
           })}
         </div>
+        
+        {/* Show a message if no platforms are selected */}
+        {selectedPlatforms.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-sm">Select at least one platform to continue</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

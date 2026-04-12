@@ -1,6 +1,6 @@
 {
-  "name": "multi-platform-frontend",
-  "version": "0.2.0",
+  "name": "content-distributer-frontend",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,11 +10,21 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-switch": "^1.2.6",
+    "@radix-ui/react-toast": "^1.2.15",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
     "lucide-react": "^0.294.0",
     "next": "14.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.65.0",
+    "tailwind-merge": "^2.0.0",
+    "tailwindcss-animate": "^1.0.7",
     "zod": "^4.1.12"
   },
   "devDependencies": {

@@ -11,101 +11,187 @@ import (
 	youtube "github.com/haiderali077/mutli-platform/uploads/youtube"
 )
 
+// youtube
 func (y YouTubeUploader) BuildAPI() map[string]interface{} {
 	return map[string]interface{}{
-		"access_token": y.AccessToken, "platform_name": y.PlatformName,
-		"title": y.Title, "description": y.Description,
-		"tags": y.Tags, "category_id": y.CategoryID,
-		"privacy_status": y.PrivacyStatus, "media_file": y.MediaFile,
+		"access_token":   y.AccessToken,
+		"platform_name":  y.PlatformName,
+		"title":          y.Title,
+		"description":    y.Description,
+		"tags":           y.Tags,
+		"category_id":    y.CategoryID,
+		"privacy_status": y.PrivacyStatus,
+		"media_file":     y.MediaFile,
 	}
 }
+
+// instagram
 func (i InstagramUploader) BuildAPI() map[string]interface{} {
 	return map[string]interface{}{
-		"access_token": i.AccessToken, "platform_name": i.PlatformName,
-		"image_url": i.ImageURL, "caption": i.Caption, "user_tags": i.UserTags,
+		"access_token":  i.AccessToken,
+		"platform_name": i.PlatformName,
+		"image_url":     i.ImageURL,
+		"caption":       i.Caption,
+		"user_tags":     i.UserTags,
 	}
 }
+
+// pinterest
 func (p PinterestUploader) BuildAPI() map[string]interface{} {
 	return map[string]interface{}{
-		"access_token": p.AccessToken, "platform_name": p.PlatformName,
-		"title": p.Title, "description": p.Description, "link": p.Link,
+		"access_token":  p.AccessToken,
+		"platform_name": p.PlatformName,
+		"title":         p.Title,
+		"description":   p.Description,
+		"link":          p.Link,
 		"media_source": map[string]interface{}{
-			"source_type": p.SourceType, "url": p.ImageURL,
+			"source_type": p.SourceType, // e.g. "image_url"
+			"url":         p.ImageURL,
 		},
 	}
 }
-func (l LinkedInUploader) BuildAPI() map[string]interface{} {
-	return map[string]interface{}{
-		"access_token": l.AccessToken, "platform_name": l.PlatformName,
-		"author": l.Author, "lifecycleState": l.LifecycleState,
-		"specificContent": map[string]interface{}{
-			"com.linkedin.ugc.ShareContent": map[string]interface{}{
-				"shareCommentary":    map[string]interface{}{"text": l.Text},
-				"shareMediaCategory": l.MediaType,
-				"media": []map[string]interface{}{{"status": l.MediaStatus, "media": l.MediaPath}},
-			},
-		},
-		"visibility": map[string]interface{}{
-			"com.linkedin.ugc.MemberNetworkVisibility": l.Visibility,
-		},
-	}
-}
+
+// reddit
 func (r RedditUploader) BuildAPI() map[string]interface{} {
 	body := map[string]interface{}{
-		"access_token": r.AccessToken, "platform_name": r.PlatformName,
-		"sr": r.Subreddit, "kind": r.PostType, "title": r.Title,
-		"resubmit": r.Resubmit, "nsfw": r.NSFW,
+		"access_token":  r.AccessToken,
+		"platform_name": r.PlatformName,
+		"sr":            r.Subreddit,
+		"kind":          r.PostType, // "self", "link", or "image"
+		"title":         r.Title,
+		"resubmit":      r.Resubmit,
+		"nsfw":          r.NSFW,
 	}
-	if r.PostType == "self" { body["text"] = r.Text }
-	if r.PostType == "link" || r.PostType == "image" { body["url"] = r.URL }
+
+	// Conditional fields depending on post type
+	if r.PostType == "self" {
+		body["text"] = r.Text
+	} else if r.PostType == "link" || r.PostType == "image" {
+		body["url"] = r.URL
+	}
+
 	return body
 }
 
-func SendAPI(u UploadContent, wg *sync.WaitGroup) {
-	defer wg.Done()
-	body := u.BuildAPI()
-	platform := body["platform_name"]
-	switch platform {
-	case "youtube":
-		title := getString(body, "title"); description := getString(body, "description")
-		category := getString(body, "category_id"); privacy := getString(body, "privacy_status")
-		filename := getString(body, "media_file")
-		tagslist := getStringArray(body, "tags")
-		tags := ""
-		for _, v := range tagslist { tags += v + "," }
-		if filename != "" && filename != "blank" {
-			youtube.UploadYoutube(title, description, category, privacy, filename, tags)
-		} else {
-			fmt.Printf("Skipping YouTube — no media file (got: '%s')\n", filename)
-		}
-	case "instagram":
-		instagram.UploadInstagram(getString(body, "image_url"), getString(body, "caption"), getString(body, "user_tags"))
-	case "pinterest":
-		title := body["title"].(string); description := body["description"].(string)
-		sourceType := body["media_source"].(map[string]interface{})["source_type"].(string)
-		imageURL := body["media_source"].(map[string]interface{})["url"].(string)
-		pinterest.UploadPinterest(title, description, imageURL, sourceType, imageURL)
-	case "reddit":
-		subreddit := getString(body, "sr"); postType := getString(body, "kind")
-		title := getString(body, "title"); resubmit := body["resubmit"].(bool); nsfw := body["nsfw"].(bool)
-		var text, urlStr string
-		if postType == "self" { text = getString(body, "text") }
-		if postType == "link" || postType == "image" { urlStr = getString(body, "url") }
-		reddit.UploadReddit(subreddit, postType, title, text, urlStr, resubmit, nsfw)
-	case "linkedin":
-		linkedin.UploadLinkedIn()
+// linkedin
+func (l LinkedInUploader) BuildAPI() map[string]interface{} {
+	return map[string]interface{}{
+		"access_token":   l.AccessToken,
+		"platform_name":  l.PlatformName,
+		"author":         l.Author,
+		"lifecycleState": l.LifecycleState, // usually "PUBLISHED"
+		"specificContent": map[string]interface{}{
+			"com.linkedin.ugc.ShareContent": map[string]interface{}{
+				"shareCommentary": map[string]interface{}{
+					"text": l.Text,
+				},
+				"shareMediaCategory": l.MediaType, // "IMAGE" or "VIDEO"
+				"media": []map[string]interface{}{
+					{
+						"status": l.MediaStatus, // "READY"
+						"media":  l.MediaPath,   // URN or URL
+					},
+				},
+			},
+		},
+		"visibility": map[string]interface{}{
+			"com.linkedin.ugc.MemberNetworkVisibility": l.Visibility, // "PUBLIC"
+		},
 	}
 }
 
-func getString(body map[string]interface{}, key string) string {
+// basic implementation
+
+// to make SendAPI concurrent, we can simply run all the functions in parallel, as we don't care which ones run when, and we aren't appending anything.
+func SendAPI(u UploadContent, wg *sync.WaitGroup) {
+	// implement SendAPI
+	body := u.BuildAPI()
+	// jsonData, _ := json.Marshal(body) --> this is a byte array!
+	platform := body["platform_name"]
+
+	switch platform {
+	case "youtube":
+		title := getStringValue(body, "title")
+		description := getStringValue(body, "description")
+		category := getStringValue(body, "category_id")
+		privacy := getStringValue(body, "privacy_status")
+		filename := getStringValue(body, "media_file")
+		tagslist := getStringArrayValue(body, "tags")
+		var tags string
+		for _, v := range tagslist {
+			tags += v
+		}
+
+		// Only proceed if we have a valid filename
+		if filename != "" && filename != "blank" {
+			// Use the file path from uploads folder
+			filePath := fmt.Sprintf("uploads/media/%s", filename)
+			youtube.UploadYoutube(title, description, category, privacy, filePath, tags)
+		} else {
+			fmt.Println("Skipping YouTube upload - no valid filename provided")
+			fmt.Printf("Filename received: '%s'\n", filename)
+		}
+
+	case "instagram":
+		// need to route to uploads/instagram/post_instagram
+
+		imageURL := getStringValue(body, "image_url")
+		caption := getStringValue(body, "caption")
+		userTags := getStringValue(body, "user_tags")
+
+		instagram.UploadInstagram(imageURL, caption, userTags)
+
+	case "pinterest":
+
+		// need to route to uploads/instagram/post_instagram
+
+		title := body["title"].(string)
+		description := body["description"].(string)
+		sourceType := body["media_source"].(map[string]interface{})["source_type"].(string)
+		imageURL := body["media_source"].(map[string]interface{})["url"].(string)
+		imagePath := imageURL
+
+		// pinterest.UploadPinterest(title, description, imagePath, sourceType, imageURL, boardID)
+		pinterest.UploadPinterest(title, description, imagePath, sourceType, imageURL)
+
+	case "reddit":
+		subreddit := body["sr"].(string)
+		postType := body["kind"].(string)
+		title := body["title"].(string)
+		resubmit := true
+		nsfw := body["nsfw"].(bool)
+
+		var text, url string
+		if postType == "self" {
+			text = body["text"].(string)
+		} else if postType == "link" || postType == "image" {
+			url = body["url"].(string)
+		}
+
+		reddit.UploadReddit(subreddit, postType, title, text, url, resubmit, nsfw)
+
+	case "linkedin":
+		linkedin.UploadLinkedIn()
+
+	}
+	wg.Done()
+}
+
+// Helper functions to safely extract values from map
+func getStringValue(body map[string]interface{}, key string) string {
 	if val, ok := body[key]; ok && val != nil {
-		if str, ok := val.(string); ok { return str }
+		if str, ok := val.(string); ok {
+			return str
+		}
 	}
 	return ""
 }
-func getStringArray(body map[string]interface{}, key string) []string {
+
+func getStringArrayValue(body map[string]interface{}, key string) []string {
 	if val, ok := body[key]; ok && val != nil {
-		if arr, ok := val.([]string); ok { return arr }
+		if arr, ok := val.([]string); ok {
+			return arr
+		}
 	}
 	return []string{}
 }
