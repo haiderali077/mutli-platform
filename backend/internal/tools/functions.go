@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	instagram "github.com/haiderali077/mutli-platform/uploads/instagram"
+	pinterest "github.com/haiderali077/mutli-platform/uploads/pintrest"
 	youtube "github.com/haiderali077/mutli-platform/uploads/youtube"
 	reddit "github.com/haiderali077/mutli-platform/uploads/reddit"
 )
@@ -21,8 +22,17 @@ func (y YouTubeUploader) BuildAPI() map[string]interface{} {
 func (i InstagramUploader) BuildAPI() map[string]interface{} {
 	return map[string]interface{}{
 		"access_token": i.AccessToken, "platform_name": i.PlatformName,
-		"image_url": i.ImageURL, "caption": i.Caption,
-		"user_tags": i.UserTags,
+		"image_url": i.ImageURL, "caption": i.Caption, "user_tags": i.UserTags,
+	}
+}
+
+func (p PinterestUploader) BuildAPI() map[string]interface{} {
+	return map[string]interface{}{
+		"access_token": p.AccessToken, "platform_name": p.PlatformName,
+		"title": p.Title, "description": p.Description,
+		"link": p.Link, "media_source": map[string]interface{}{
+			"source_type": p.SourceType, "url": p.ImageURL,
+		},
 	}
 }
 
@@ -57,6 +67,12 @@ func SendAPI(u UploadContent, wg *sync.WaitGroup) {
 		caption := getString(body, "caption")
 		userTags := getString(body, "user_tags")
 		instagram.UploadInstagram(imageURL, caption, userTags)
+	case "pinterest":
+		title := body["title"].(string)
+		description := body["description"].(string)
+		sourceType := body["media_source"].(map[string]interface{})["source_type"].(string)
+		imageURL := body["media_source"].(map[string]interface{})["url"].(string)
+		pinterest.UploadPinterest(title, description, imageURL, sourceType, imageURL)
 	case "reddit":
 		subreddit := getString(body, "sr")
 		postType := getString(body, "kind")
