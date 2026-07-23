@@ -4,9 +4,38 @@ import (
 	"fmt"
 	"sync"
 
+	instagram "github.com/haiderali077/mutli-platform/uploads/instagram"
 	youtube "github.com/haiderali077/mutli-platform/uploads/youtube"
 	reddit "github.com/haiderali077/mutli-platform/uploads/reddit"
 )
+
+func (y YouTubeUploader) BuildAPI() map[string]interface{} {
+	return map[string]interface{}{
+		"access_token": y.AccessToken, "platform_name": y.PlatformName,
+		"title": y.Title, "description": y.Description,
+		"tags": y.Tags, "category_id": y.CategoryID,
+		"privacy_status": y.PrivacyStatus, "media_file": y.MediaFile,
+	}
+}
+
+func (i InstagramUploader) BuildAPI() map[string]interface{} {
+	return map[string]interface{}{
+		"access_token": i.AccessToken, "platform_name": i.PlatformName,
+		"image_url": i.ImageURL, "caption": i.Caption,
+		"user_tags": i.UserTags,
+	}
+}
+
+func (r RedditUploader) BuildAPI() map[string]interface{} {
+	body := map[string]interface{}{
+		"access_token": r.AccessToken, "platform_name": r.PlatformName,
+		"sr": r.Subreddit, "kind": r.PostType,
+		"title": r.Title, "resubmit": r.Resubmit, "nsfw": r.NSFW,
+	}
+	if r.PostType == "self" { body["text"] = r.Text }
+	if r.PostType == "link" || r.PostType == "image" { body["url"] = r.URL }
+	return body
+}
 
 func SendAPI(u UploadContent, wg *sync.WaitGroup) {
 	body := u.BuildAPI()
@@ -23,6 +52,11 @@ func SendAPI(u UploadContent, wg *sync.WaitGroup) {
 		if filename != "" && filename != "blank" {
 			youtube.UploadYoutube(title, description, category, privacy, filename, tags)
 		}
+	case "instagram":
+		imageURL := getString(body, "image_url")
+		caption := getString(body, "caption")
+		userTags := getString(body, "user_tags")
+		instagram.UploadInstagram(imageURL, caption, userTags)
 	case "reddit":
 		subreddit := getString(body, "sr")
 		postType := getString(body, "kind")
@@ -30,12 +64,8 @@ func SendAPI(u UploadContent, wg *sync.WaitGroup) {
 		resubmit := body["resubmit"].(bool)
 		nsfw := body["nsfw"].(bool)
 		var text, urlStr string
-		if postType == "self" {
-			text = getString(body, "text")
-		}
-		if postType == "link" || postType == "image" {
-			urlStr = getString(body, "url")
-		}
+		if postType == "self" { text = getString(body, "text") }
+		if postType == "link" || postType == "image" { urlStr = getString(body, "url") }
 		reddit.UploadReddit(subreddit, postType, title, text, urlStr, resubmit, nsfw)
 	}
 	wg.Done()
@@ -43,9 +73,7 @@ func SendAPI(u UploadContent, wg *sync.WaitGroup) {
 
 func getString(body map[string]interface{}, key string) string {
 	if val, ok := body[key]; ok && val != nil {
-		if str, ok := val.(string); ok {
-			return str
-		}
+		if str, ok := val.(string); ok { return str }
 	}
 	return ""
 }
